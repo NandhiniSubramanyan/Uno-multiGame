@@ -1,20 +1,3 @@
-/**
-  This program is meant to be used to test the android app 'Rock Paper Scissors online game'
-  that you have to develop for the course DT8025 Real-Time Embedded Systems.
-
-  It implements the server to
-    1. accept connection
-    2. register players
-    3. send the list of online (available) players
-    4. associate two palyers together upon request/accept
-    5. pass messages and status between two palyers playing
-    6.
-
-  To start the server run
-
-  > java RPSServer
-*/
-
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
@@ -38,8 +21,8 @@ public class UnoServer {
 	public static void main(String[] args)throws java.io.FileNotFoundException, java.io.IOException  {
 		int port = 4444;
 
-		FileWriter writer = new FileWriter("rps.txt", false);
-		writer.write("<Rock Paper Scissors Online Game>\n");
+		FileWriter writer = new FileWriter("uno.txt", false);
+		writer.write("<Uno Multi Game Online Game>\n");
 		writer.close();
 
 		buildConnections(port);
@@ -115,52 +98,9 @@ private static void buildConnections(int port){
 				} else if(s.startsWith("<OnlinePlayers/>")) {
 					System.out.println(clientName + " asks for online players.");
 					OnlinePlayers("<OnlinePlayer", out);
-					out.flush();
-				} else if (s.startsWith("<PlayRequest ")) {
-					String with = s.replace("/>", "").substring(s.indexOf(' ')+1) ;
-					System.out.println(clientName + " requests to play with " + with + ".");
-					PlayRequest(clientName, with, s, out);
-					out.flush();
-				} else if (s.startsWith("<DiscardPlayRequest ")) {
-					String with = s.replace("/>", "").substring(s.indexOf(' ')+1) ;
-					System.out.println(clientName + " discards the request to play with " + with + ".");
-					DiscardPlayRequest(clientName, with, s, out);
-					out.flush();
-				} else if(s.startsWith("<PlayRequestsForMe/>")) {
-					System.out.println(clientName + " asks for play requests for him/her.");
-					PlayRequestsFor(clientName, s, out);
-					out.flush();
-				} else if(s.startsWith("<AcceptPlayRequest ")) {
-					String from = s.replace("/>", "").substring(s.indexOf(' ')+1) ;
-					System.out.println(clientName + " accepted play request from " + from + ".");
-					AcceptPlayRequest(clientName, from, s, out);
-					out.flush();
-				} else if(s.startsWith("<RejectPlayRequest ")) {
-					String from = s.replace("/>", "").substring(s.indexOf(' ')+1) ;
-					System.out.println(clientName + " rejected play request from " + from + ".");
-					RejectPlayRequest(clientName, from, s, out);
-					out.flush();
-				} else if(s.startsWith("<MyPlayRequests/>")) {
-					System.out.println(clientName + " asks for their play requests.");
-					MyPlayRequests(clientName, s, out);
-					out.flush();
-				} else if(s.startsWith("<Choice ")) {
-					String choice = s.replace("/>", "").substring(s.indexOf(' ')+1);
-					System.out.println(clientName + " chose " + choice + ".");
-					UpdateGameStatus(clientName, choice, s, out);
-					out.flush();
-				} else if(s.startsWith("<CheckGameStatus/>")) {
-					System.out.println(clientName + " asks for game status.");
-					CheckGameStatus(clientName, s, out);
-					out.flush();
-				} else if(s.startsWith("<LeaveSession/>")) {
-					System.out.println(clientName + " left the session.");
-					LeaveSession(clientName, s, out);
-					out.flush();
 				} else if(s.startsWith("<Exit/>")) {
 					System.out.println(clientName + " left the game.");
 					LeaveGame(clientName, s, out);
-					out.flush();
 				}
 			}
 		}
@@ -169,11 +109,11 @@ private static void buildConnections(int port){
 private static void ReadyToPlay(String s, PrintWriter out) throws IOException {
     try
     {
-        out.println("<Welcome to the Rock Paper Scissors Online Game!/>");
+        out.println("<Welcome to the Uno Game Online Game!/>");
         out.flush();
 
-        FileWriter writer = new FileWriter("rps.txt",true);
-        writer.write("<OnlinePlayer name=\"" + s + "\" status=\"idle\"/>\n");
+        FileWriter writer = new FileWriter("uno.txt",true);
+        writer.write("<OnlinePlayer name=\"" + s + "\" status=\"ready\"/>\n");
         writer.close();
     }
     catch (IOException ioe)
@@ -188,7 +128,7 @@ private static  int OnlinePlayers(String s, PrintWriter out)
 	     int iSend=0;
          try
              {
-             File file = new File("rps.txt");
+             File file = new File("uno.txt");
              BufferedReader reader = new BufferedReader(new FileReader(file));
              String line = "", text = "";
              while((line = reader.readLine()) != null)
@@ -205,7 +145,7 @@ private static  int OnlinePlayers(String s, PrintWriter out)
              reader.close();
 
 
-             FileWriter writer = new FileWriter("rps.txt");
+             FileWriter writer = new FileWriter("uno.txt");
              writer.write(text);
              writer.close();
          }
@@ -216,302 +156,14 @@ private static  int OnlinePlayers(String s, PrintWriter out)
          return iSend;
      }
 
-    private static void PlayRequest(String clientName, String with, String s, PrintWriter out) {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            boolean validReq = false;
-
-            while((line = reader.readLine()) != null)
-            {
-
-                if(line.startsWith("<OnlinePlayer name=\"" + clientName)){
-
-                    line = line.replace("idle", "waiting");
-                } else if(line.startsWith("<OnlinePlayer name=\"" + with)){
-                    validReq = true;
-                }
-
-                text += line + "\n";
-            }
-            reader.close();
-
-            if (validReq) {
-                text += "<PlayRequest From=\"" + clientName + "\" With=\"" + with + "\" status=\"pending\"/>\n";
-                out.println("<Play request was sent to " + with + "!/>");
-                out.flush();
-
-            } else {
-                out.println("<Invalid Request: " + with + " is not available!/>");
-                out.flush();
-            }
-
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-    }
-    private static void PlayRequestsFor(String clientName, String s, PrintWriter out)
-    {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            while((line = reader.readLine()) != null)
-            {
-
-                if(line.startsWith("<PlayRequest") & line.indexOf(" With=\""+ clientName) >= 0){
-                    out.println(line);
-                    out.flush();
-                }
-                text += line + "\n";
-
-            }
-            reader.close();
 
 
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-        return;
-    }
-
-    private static void MyPlayRequests(String clientName, String s, PrintWriter out)
-    {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            while((line = reader.readLine()) != null)
-            {
-                if(line.startsWith("<PlayRequest") & line.indexOf("From=\""+ clientName) >= 0){
-                    out.println(line);
-                    out.flush();
-                }
-                text += line + "\n";
-
-            }
-            reader.close();
-
-
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-        return;
-    }
-
-    private static void AcceptPlayRequest(String clientName, String from, String s, PrintWriter out)
-    {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            while((line = reader.readLine()) != null)
-            {
-
-                    if(line.startsWith("<PlayRequest") & line.indexOf(" From=\""+ from) >= 0){
-                        line = line.replace("pending", "accepted");
-                        out.println(line);
-                        out.flush();
-                    }
-
-                    if(line.startsWith("<OnlinePlayer name=\"" + clientName)){
-
-                        line = line.replace("idle", "busy");
-                    }
-
-                    if(line.startsWith("<OnlinePlayer name=\"" + from)){
-
-                        line = line.replace("waiting", "busy");
-                    }
-
-
-                text += line + "\n";
-
-            }
-            reader.close();
-
-            text += "<GameSession> <Player1 name=\"" + from + "\" choice=\"\"/> <Player2 name=\"" + clientName + "\" choice=\"\"/> <GameSession/>\n";
-
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-    }
-
-    private static void RejectPlayRequest(String clientName, String from, String s, PrintWriter out)
-    {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            while((line = reader.readLine()) != null)
-            {
-
-                if(line.startsWith("<PlayRequest") & line.indexOf(" From=\""+ from) >= 0){
-                    line = line.replace("pending", "rejected");
-                    out.println(line);
-                    out.flush();
-                }
-
-                if(line.startsWith("<OnlinePlayer name=\"" + from)){
-
-                    line = line.replace("waiting", "idle");
-                }
-
-                text += line + "\n";
-
-            }
-            reader.close();
-
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-    }
-
-    private static void DiscardPlayRequest(String clientName, String with, String s, PrintWriter out)
-    {
-        try
-        {
-            File file = new File("rps.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = "", text = "";
-            boolean validReq = false;
-            while((line = reader.readLine()) != null)
-            {
-
-                if(line.startsWith("<PlayRequest") & line.indexOf(" With=\""+ with) >= 0){
-                    validReq = true;
-                    line = line.replace("pending", "discarded");
-                    out.println(line);
-                    out.flush();
-                    line = "";
-                }
-
-                if(line.startsWith("<OnlinePlayer name=\"" + clientName)){
-
-                    line = line.replace("waiting", "idle");
-                }
-
-                text += line + "\n";
-
-            }
-            reader.close();
-
-            if (!validReq) {
-                out.println("<Invalid Rquest: No pending play request with " + with + "/>");
-                out.flush();
-            }
-
-            FileWriter writer = new FileWriter("rps.txt");
-            writer.write(text);
-            writer.close();
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
-        }
-    }
-
-
-private static void UpdateGameStatus(String clientName, String choice, String s, PrintWriter out)
-{
-        try
-        {
-        File file = new File("rps.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line = "", text = "";
-        boolean validReq = false;
-
-        while((line = reader.readLine()) != null)
-        {
-            if (line.startsWith("<GameSession>") & line.indexOf(clientName) >= 0) {
-                line = line.replaceAll("=\"" + clientName + "\" choice=\"([^<]*)\"/>", "=\"" + clientName + "\" choice=\"" + choice + "\"/>");
-                validReq = true;
-            }
-
-            text += line + "\n";
-        }
-        reader.close();
-
-        if (!validReq) {
-            out.println("<Invalid Rquest: no valid session!/>");
-            out.flush();
-        }
-
-        FileWriter writer = new FileWriter("rps.txt");
-        writer.write(text);
-        writer.close();
-    }
-    catch (IOException ioe) {
-        ioe.printStackTrace();
-    }
-
-}
-
-private static void CheckGameStatus(String clientName, String s, PrintWriter out)
-{
-    try {
-        File file = new File("rps.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line = "", text = "", tempLine = "";
-        boolean inSession = false, found = false;
-        while((line = reader.readLine()) != null) {
-
-            if(line.startsWith("<GameSession>") & line.indexOf(clientName) >= 0) {
-                out.println(line);
-                out.flush();
-            }
-            text += line + "\n";
-
-        }
-        reader.close();
-
-
-        FileWriter writer = new FileWriter("rps.txt");
-        writer.write(text);
-        writer.close();
-    }
-    catch (IOException ioe) {
-        ioe.printStackTrace();
-    }
-    return;
-}
 
 private static  void LeaveGame(String clientName, String swrite, PrintWriter out)
 {
     try
     {
-        File file = new File("rps.txt");
+        File file = new File("uno.txt");
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line = "", text = "";
 
@@ -537,7 +189,7 @@ private static  void LeaveGame(String clientName, String swrite, PrintWriter out
         }
         reader.close();
 
-        FileWriter writer = new FileWriter("rps.txt");
+        FileWriter writer = new FileWriter("uno.txt");
         writer.write(text);
         writer.close();
     }
@@ -546,47 +198,6 @@ private static  void LeaveGame(String clientName, String swrite, PrintWriter out
         ioe.printStackTrace();
     }
 
-}
-
-private static  void LeaveSession(String clientName, String swrite, PrintWriter out)
-{
-    try
-    {
-        File file = new File("rps.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line = "", text = "";
-
-        while((line = reader.readLine()) != null)
-        {
-
-            if(line.startsWith("<OnlinePlayer name=\"" + clientName)){
-
-                line = line.replace("busy", "idle");
-                out.println("<Left Session/>");
-                out.flush();
-
-            } else if(line.startsWith("<GameSession") & line.indexOf(clientName) >= 0){
-
-                line = "";
-            } else if(line.startsWith("<PlayRequest") & line.indexOf(clientName) >= 0){
-
-                line = "";
-            }
-
-            text += line + "\n";
-
-
-        }
-        reader.close();
-
-        FileWriter writer = new FileWriter("rps.txt");
-        writer.write(text);
-        writer.close();
-    }
-    catch (IOException ioe)
-    {
-        ioe.printStackTrace();
-    }
 }
 }
 

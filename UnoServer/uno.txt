@@ -1,0 +1,2 @@
+<Uno Multi Game Online Game>
+<OnlinePlayer name="Mujtaba" status="ready"/>

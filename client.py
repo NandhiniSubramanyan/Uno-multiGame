@@ -37,5 +37,22 @@ def login_to_game(host, player_name):
     # Receive data
     print('# Receive data from server')
     reply = s.recv(4096)
+    print(reply)
 
+
+
+
+    ## Send message
+
+    print('# Sending data to server')
+
+    try:
+        s.sendall("<ReadyToPlay/> / HTTP/1.0\r\n\r\n".encode())
+    except socket.error:
+        print('Send failed')
+        sys.exit()
+
+    # Receive data
+    print('# Receive data from server')
+    reply = s.recv(4096)
     print(reply)
